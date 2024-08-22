@@ -1,0 +1,26 @@
+{
+  "name": "mevn-stack-todo-list",
+  "version": "1.0.0",
+  "description": "stuff",
+  "main": "server.js",
+  "scripts": {
+    "start": "./node_modules/nodemon/bin/nodemon.js server.js --exec 'npm run lint && node'",
+    "lint": "./node_modules/.bin/eslint 'src/**/*.js'"
+  },
+  "keywords": [
+    "node.js",
+    "express",
+    "mongodb",
+    "rest",
+    "api"
+  ],
+  "author": "alexanderhamilton",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^1.20.2",
+    "cors": "^2.8.5",
+    "eslint": "^9.7.0",
+    "express": "^4.19.2",
+    "mongoose": "^8.5.1"
+  }
+}
