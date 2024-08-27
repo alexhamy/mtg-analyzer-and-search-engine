@@ -83,10 +83,42 @@ exports.create = (req, res) => {
 };
 
 
-// Retrieve all Cards from the database.
+// Retrieve all Cards matching the string from the database.
 exports.findAll = (req, res) => {
-    const name = req.query.name;
-    var condition = name ? { name: {$regex: new RegExp(name), $options: "i"}} : {};
+    let condition = {};
+
+    // Loop through all query parameters and build the condition object
+    Object.keys(req.query).forEach((key) => {
+        const value = req.query[key];
+        if (value) {
+            // Check the type of the field in the schema
+            const schemaType = Mtg.schema.path(key).instance;
+
+            if (schemaType === 'String') {
+                // Use regex for string fields
+                condition[key] = { $regex: new RegExp(value), $options: "i" };
+            } else if (schemaType === 'Number') {
+                // Convert to number for number fields
+                condition[key] = Number(value);
+            } else if (schemaType === 'Boolean') {
+                // Convert to boolean for boolean fields
+                condition[key] = value.toLowerCase() === 'true';
+            } else if (schemaType === 'Array' || schemaType === 'Embedded') {
+                // Handle array or embedded objects (nested objects)
+                try {
+                    const parsedValue = JSON.parse(value);
+                    if (Array.isArray(parsedValue)) {
+                        condition[key] = { $all: parsedValue };
+                    } else if (typeof parsedValue === 'object') {
+                        condition[key] = parsedValue;
+                    }
+                } catch (e) {
+                    // Handle as string if JSON parsing fails
+                    condition[key] = { $regex: new RegExp(value), $options: "i" };
+                }
+            }
+        }
+    });
 
     Mtg.find(condition)
         .then(data => {
@@ -94,11 +126,12 @@ exports.findAll = (req, res) => {
         })
         .catch(err => {
             res.status(500).send({
-                message:
-                    err.message || "Some error occured while retrieving cards."
+                message: err.message || "Some error occurred while retrieving cards."
             });
         });
 };
+
+
 
 // Find a single Card with an id
 exports.findOne = (req, res) => {
