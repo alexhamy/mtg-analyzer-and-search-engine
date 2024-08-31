@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-const MtgSchema = new mongoose.Schema({
+const CardSchema = new mongoose.Schema({
   _id: mongoose.Schema.Types.ObjectId,
   object: { type: String },
   id: { type: String },
@@ -112,6 +112,6 @@ const MtgSchema = new mongoose.Schema({
   }
 });
 
-const MtgCard = mongoose.model('MtgCards', MtgSchema);
+const MtgCard = mongoose.model('MtgCard', CardSchema);
 
 module.exports = MtgCard;

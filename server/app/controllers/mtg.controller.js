@@ -1,6 +1,6 @@
 const db = require("../models");
 const mongoose = require('mongoose');
-const Mtg = db.MtgCards;
+const Mtg = db.MtgCard;
 
 exports.create = (req, res) => {
     // Create a new MTG card instance

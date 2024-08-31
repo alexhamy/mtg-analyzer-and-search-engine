@@ -7,6 +7,6 @@ const db = {};
 db.mongoose = mongoose;
 db.url = dbConfig.url;
 
-db.MtgCards = require("./mtg.model.js");
+db.MtgCard = require("./mtg.model.js");
 
 module.exports = db;
