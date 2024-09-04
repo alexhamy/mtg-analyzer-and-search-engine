@@ -22,8 +22,8 @@ class MtgDataService {
     return http.delete(`/mtg/${id}`);
   }
 
-  findByName(name) {
-    return http.get(`/mtg?name=${name}`, );
+  findByName(name, params) {
+    return http.get(`/mtg?name=${name}`, { params });
   }
 }
 

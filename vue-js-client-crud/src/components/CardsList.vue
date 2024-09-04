@@ -11,7 +11,7 @@
     <div class="col-md-4">
       <div class="form-group">
         <label for="language">Select Language:</label>
-        <select id="language" class="form-control" v-model="selectedLanguage" @change="retrieveCards">
+        <select id="language" class="form-control" v-model="selectedLanguage" @change="searchName()">
           <option v-for="lang in languages" :key="lang" :value="lang">
             {{ lang.toUpperCase() }}
           </option>
@@ -92,7 +92,7 @@ export default {
 
       totalItems: 0,
 
-      pageSizes: [4, 16, 32, 64] // Available options for items per page
+      pageSizes: [8, 16, 32, 64] // Available options for items per page
     };
   },
   methods: {
@@ -140,11 +140,11 @@ export default {
     },
     changePage(page) {
       this.currentPage = page;
-      this.retrieveCards();
+      this.searchName();
     },
     changeItemsPerPage() {
       this.currentPage = 1;
-      this.retrieveCards();
+      this.searchName();
     }
   },
   mounted() {
