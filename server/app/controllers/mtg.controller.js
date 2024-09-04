@@ -82,47 +82,56 @@ exports.create = (req, res) => {
         });
 };
 
-
 // Retrieve all Cards matching the string from the database.
 exports.findAll = (req, res) => {
     let condition = {};
 
-    // Loop through all query parameters and build the condition object
+    // Build condition object from query parameters
     Object.keys(req.query).forEach((key) => {
         const value = req.query[key];
         if (value) {
-            // Check the type of the field in the schema
-            const schemaType = Mtg.schema.path(key).instance;
+            const schemaPath = Mtg.schema.path(key);
 
-            if (schemaType === 'String') {
-                // Use regex for string fields
-                condition[key] = { $regex: new RegExp(value), $options: "i" };
-            } else if (schemaType === 'Number') {
-                // Convert to number for number fields
-                condition[key] = Number(value);
-            } else if (schemaType === 'Boolean') {
-                // Convert to boolean for boolean fields
-                condition[key] = value.toLowerCase() === 'true';
-            } else if (schemaType === 'Array' || schemaType === 'Embedded') {
-                // Handle array or embedded objects (nested objects)
-                try {
-                    const parsedValue = JSON.parse(value);
-                    if (Array.isArray(parsedValue)) {
-                        condition[key] = { $all: parsedValue };
-                    } else if (typeof parsedValue === 'object') {
-                        condition[key] = parsedValue;
-                    }
-                } catch (e) {
-                    // Handle as string if JSON parsing fails
+            if (schemaPath) {
+                const schemaType = schemaPath.instance;
+                if (schemaType === 'String') {
                     condition[key] = { $regex: new RegExp(value), $options: "i" };
+                } else if (schemaType === 'Number') {
+                    condition[key] = Number(value);
+                } else if (schemaType === 'Boolean') {
+                    condition[key] = value.toLowerCase() === 'true';
+                } else if (schemaType === 'Array' || schemaType === 'Embedded') {
+                    try {
+                        const parsedValue = JSON.parse(value);
+                        if (Array.isArray(parsedValue)) {
+                            condition[key] = { $all: parsedValue };
+                        } else if (typeof parsedValue === 'object') {
+                            condition[key] = parsedValue;
+                        }
+                    } catch (e) {
+                        condition[key] = { $regex: new RegExp(value), $options: "i" };
+                    }
                 }
             }
         }
     });
 
-    Mtg.find(condition)
+    // console.log(`Pagination - Page Before: ${req.query.page}, Limit Before: ${req.query.limit}`);
+
+    // Ensure `page` and `limit` are valid numbers
+    const page = parseInt(req.query.page, 10) || 1; // Default to page 1 if not provided
+    const limit = parseInt(req.query.limit, 10) || 16; // Default to 10 items per page if not provided
+
+    // console.log(`Pagination - Page After: ${page}, Limit After: ${limit}`);
+
+    Mtg.paginate(condition, { page, limit })
         .then(data => {
-            res.send(data);
+            res.send({
+                totalItems: data.totalDocs,
+                cards: data.docs,
+                totalPages: data.totalPages,
+                currentPage: data.page,
+            });
         })
         .catch(err => {
             res.status(500).send({
@@ -130,8 +139,6 @@ exports.findAll = (req, res) => {
             });
         });
 };
-
-
 
 // Find a single Card with an id
 exports.findOne = (req, res) => {
@@ -195,3 +202,4 @@ exports.delete = (req, res) => {
         });
     });
 };
+

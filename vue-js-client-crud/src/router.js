@@ -8,19 +8,19 @@ export default new Router({
   routes: [
     {
       path: "/",
-      alias: "/tutorials",
-      name: "tutorials",
-      component: () => import("./components/TutorialsList")
+      alias: "/mtg",
+      name: "mtg",
+      component: () => import("./components/CardsList")
     },
     {
-      path: "/tutorials/:id",
+      path: "/mtg/:id",
       name: "tutorial-details",
-      component: () => import("./components/Tutorial")
+      component: () => import("./components/CurrentCard")
     },
     {
       path: "/add",
       name: "add",
-      component: () => import("./components/AddTutorial")
+      component: () => import("./components/AddCard")
     }
   ]
 });

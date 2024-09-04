@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const mongoosePaginate = require('mongoose-paginate-v2');
 
 const CardSchema = new mongoose.Schema({
   _id: mongoose.Schema.Types.ObjectId,
@@ -7,7 +8,7 @@ const CardSchema = new mongoose.Schema({
   oracle_id: { type: String },
   multiverse_ids: [{ type: Number }],
   name: { type: String },
-  printed_name: { type: String }, // Added
+  printed_name: { type: String }, 
   lang: { type: String },
   released_at: { type: Date },
   uri: { type: String },
@@ -26,11 +27,11 @@ const CardSchema = new mongoose.Schema({
   mana_cost: { type: String },
   cmc: { type: Number },
   type_line: { type: String },
-  printed_type_line: { type: String }, // Added
+  printed_type_line: { type: String }, 
   oracle_text: { type: String },
-  printed_text: { type: String }, // Added
-  power: { type: String }, // Added
-  toughness: { type: String }, // Added
+  printed_text: { type: String }, 
+  power: { type: String }, 
+  toughness: { type: String }, 
   colors: [{ type: String }],
   color_identity: [{ type: String }],
   keywords: [{ type: String }],
@@ -111,6 +112,8 @@ const CardSchema = new mongoose.Schema({
     cardhoarder: { type: String }
   }
 });
+
+CardSchema.plugin(mongoosePaginate);
 
 const MtgCard = mongoose.model('MtgCard', CardSchema);
 

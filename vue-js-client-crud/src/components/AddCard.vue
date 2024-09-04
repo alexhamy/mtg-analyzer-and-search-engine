@@ -2,64 +2,63 @@
     <div class="submit-form">
       <div v-if="!submitted">
         <div class="form-group">
-          <label for="title">Title</label>
+          <label for="name">Name</label>
           <input
             type="text"
             class="form-control"
-            id="title"
+            id="name"
             required
-            v-model="tutorial.title"
-            name="title"
+            v-model="card.name"
+            name="name"
           />
         </div>
   
         <div class="form-group">
-          <label for="description">Description</label>
+          <label for="oracle_text">Oracle Text</label>
           <input
             class="form-control"
-            id="description"
+            id="oracl_text"
             required
-            v-model="tutorial.description"
-            name="description"
+            v-model="card.oracle_text"
+            name="oracl_text"
           />
         </div>
   
-        <button @click="saveTutorial" class="btn btn-success">Submit</button>
+        <button @click="saveCard" class="btn btn-success">Submit</button>
       </div>
   
       <div v-else>
         <h4>You submitted successfully!</h4>
-        <button class="btn btn-success" @click="newTutorial">Add</button>
+        <button class="btn btn-success" @click="newCard">Add</button>
       </div>
     </div>
   </template>
   
   <script>
-  import TutorialDataService from "../services/TutorialDataService";
+  import MtgDataService from "../services/MtgDataService";
   
   export default {
-    name: "add-tutorial",
+    name: "add-card",
     data() {
       return {
-        tutorial: {
+        card: {
           id: null,
-          title: "",
-          description: "",
-          published: false
+          name: "",
+          oracle_text: "",
         },
         submitted: false
       };
     },
     methods: {
-      saveTutorial() {
+      saveCard() {
         var data = {
-          title: this.tutorial.title,
-          description: this.tutorial.description
+          name: this.card.name,
+          oracle_text: this.card.oracle_text
         };
   
-        TutorialDataService.create(data)
+        MtgDataService.create(data)
           .then(response => {
-            this.tutorial.id = response.data.id;
+            this.card.id = response.data.id;
             console.log(response.data);
             this.submitted = true;
           })
@@ -68,9 +67,13 @@
           });
       },
       
-      newTutorial() {
+      newCard() {
         this.submitted = false;
-        this.tutorial = {};
+        this.card = {
+          id: null,
+          name: "",
+          oracle_text: ""
+        };
       }
     }
   };
@@ -82,4 +85,4 @@
     margin: auto;
   }
   </style>
-  
+  ../services/MtgDataService
