@@ -6,7 +6,7 @@ module.exports = app => {
     // Create a new Card
     router.post("/", mtg.create);
   
-    // Retrieve all Cards matching string
+    // Retrieve all Cards matching string and additional params
     router.get("/", mtg.findAll);
  
     // Retrieve a single Card with id

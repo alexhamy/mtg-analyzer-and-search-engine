@@ -23,7 +23,7 @@ class MtgDataService {
   }
 
   findByName(name, params) {
-    return http.get(`/mtg?name=${name}`, { params });
+    return http.get(`/mtg`, { params: { ...params, name } });
   }
 }
 

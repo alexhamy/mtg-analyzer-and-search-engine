@@ -86,14 +86,20 @@ exports.create = (req, res) => {
 exports.findAll = (req, res) => {
     let condition = {};
 
-    // Build condition object from query parameters
+    // Handle specific search queries like `name` (case-insensitive regex search)
+    if (req.query.name) {
+        condition.name = { $regex: new RegExp(req.query.name), $options: "i" };
+    }
+
+    // Handle additional query parameters (language, etc.)
     Object.keys(req.query).forEach((key) => {
-        const value = req.query[key];
-        if (value) {
+        if (key !== "name" && key !== "page" && key !== "limit") { // Skip `name`, `page`, `limit` since they're special
+            const value = req.query[key];
             const schemaPath = Mtg.schema.path(key);
 
             if (schemaPath) {
                 const schemaType = schemaPath.instance;
+
                 if (schemaType === 'String') {
                     condition[key] = { $regex: new RegExp(value), $options: "i" };
                 } else if (schemaType === 'Number') {
@@ -116,14 +122,11 @@ exports.findAll = (req, res) => {
         }
     });
 
-    // console.log(`Pagination - Page Before: ${req.query.page}, Limit Before: ${req.query.limit}`);
-
     // Ensure `page` and `limit` are valid numbers
-    const page = parseInt(req.query.page, 10) || 1; // Default to page 1 if not provided
-    const limit = parseInt(req.query.limit, 10) || 16; // Default to 10 items per page if not provided
+    const page = parseInt(req.query.page, 10) || 1; // Default to page 1
+    const limit = parseInt(req.query.limit, 10) || 16; // Default to 16 items per page
 
-    // console.log(`Pagination - Page After: ${page}, Limit After: ${limit}`);
-
+    // Paginate based on condition and pagination options
     Mtg.paginate(condition, { page, limit })
         .then(data => {
             res.send({

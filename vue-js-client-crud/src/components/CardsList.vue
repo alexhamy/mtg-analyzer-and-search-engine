@@ -4,14 +4,14 @@
       <div class="input-group mb-3">
         <input type="text" class="form-control" placeholder="Search by name" v-model="name" />
         <div class="input-group-append">
-          <button class="btn btn-outline-secondary" type="button" @click="searchName">Search</button>
+          <button class="btn btn-outline-secondary" type="button" @click="updateQueryParams">Search</button>
         </div>
       </div>
     </div>
     <div class="col-md-4">
       <div class="form-group">
         <label for="language">Select Language:</label>
-        <select id="language" class="form-control" v-model="selectedLanguage" @change="searchName()">
+        <select id="language" class="form-control" v-model="selectedLanguage" @change="updateQueryParams">
           <option v-for="lang in languages" :key="lang" :value="lang">
             {{ lang.toUpperCase() }}
           </option>
@@ -50,7 +50,7 @@
       </div>
       <div class="items-per-page">
         <label for="itemsPerPage">Items per page:</label>
-        <select id="itemsPerPage" v-model="itemsPerPage" @change="changeItemsPerPage($event)">
+        <select id="itemsPerPage" v-model="itemsPerPage" @change="updateQueryParams">
           <option v-for="size in pageSizes" :key="size" :value="size">
             {{ size }}
           </option>
@@ -72,7 +72,6 @@
   </div>
 </template>
 
-
 <script>
 import MtgDataService from "../services/MtgDataService";
 
@@ -82,17 +81,18 @@ export default {
       cards: [],
       currentCard: null,
       currentIndex: -1,
-      name: "",
-      selectedLanguage: "en", // Default language
+      
+      name: this.$route.query.name || "", // Load from URL query params
+      
+      selectedLanguage: this.$route.query.lang || "en",
       languages: ["en", "ja", "de", "fr", "es", "pt", "it"], // Available languages
 
-      currentPage: 1,
+      currentPage: parseInt(this.$route.query.page) || 1,
+      itemsPerPage: parseInt(this.$route.query.limit) || 8,
+
       totalPages: 1,
-      itemsPerPage: 8, // Default items per page
-
       totalItems: 0,
-
-      pageSizes: [8, 16, 32, 64] // Available options for items per page
+      pageSizes: [8, 16, 32, 64]
     };
   },
   methods: {
@@ -100,51 +100,52 @@ export default {
       MtgDataService.getAll({
         page: this.currentPage,
         limit: this.itemsPerPage,
-        lang: this.selectedLanguage, // Include language in the query
+        lang: this.selectedLanguage,
+        name: this.name
       })
         .then(response => {
           this.cards = response.data.cards;
           this.totalPages = response.data.totalPages;
-          this.currentPage = response.data.currentPage;
           this.totalItems = response.data.totalItems;
         })
         .catch(e => {
           console.log(e);
         });
-    },
-    refreshList() {
-      this.retrieveCards();
-      this.currentCard = null;
-      this.currentIndex = -1;
     },
     setActiveCard(card, index) {
       this.currentCard = card;
       this.currentIndex = index;
       this.$router.push(`/mtg/${card._id}`);
     },
-    searchName() {
-      MtgDataService.findByName(this.name, {
-        page: this.currentPage,
-        limit: this.itemsPerPage,
-        lang: this.selectedLanguage, // Include language in the search
-      })
-        .then(response => {
-          this.cards = response.data.cards;
-          this.totalPages = response.data.totalPages;
-          this.currentPage = response.data.currentPage;
-          this.totalItems = response.data.totalItems;
-        })
-        .catch(e => {
-          console.log(e);
-        });
-    },
     changePage(page) {
       this.currentPage = page;
-      this.searchName();
+      this.updateQueryParams();
     },
-    changeItemsPerPage() {
-      this.currentPage = 1;
-      this.searchName();
+    updateQueryParams() {
+      // Update the URL with current search parameters
+      this.$router.push({
+        path: "/mtg",
+        query: {
+          name: this.name,
+          lang: this.selectedLanguage,
+          page: this.currentPage,
+          limit: this.itemsPerPage
+        }
+      });
+      this.retrieveCards();
+    }
+  },
+  watch: {
+    // Watch the route for changes, e.g., when the user manually edits the URL
+    '$route.query': {
+      immediate: true,
+      handler(newQuery) {
+        this.name = newQuery.name || "";
+        this.selectedLanguage = newQuery.lang || "en";
+        this.currentPage = parseInt(newQuery.page) || 1;
+        this.itemsPerPage = parseInt(newQuery.limit) || 8;
+        this.retrieveCards();
+      }
     }
   },
   mounted() {
