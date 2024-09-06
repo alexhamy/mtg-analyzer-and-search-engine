@@ -84,16 +84,15 @@ exports.create = (req, res) => {
 
 // Retrieve all Cards matching the string from the database.
 exports.findAll = (req, res) => {
-    let condition = {};
+    let matchStage = {};
 
-    // Handle specific search queries like `name` (case-insensitive regex search)
+    // Handle specific search queries like `name`
     if (req.query.name) {
-        condition.name = { $regex: new RegExp(req.query.name), $options: "i" };
+        matchStage.name = { $regex: new RegExp(req.query.name), $options: "i" };
     }
 
-    // Handle additional query parameters (language, etc.)
     Object.keys(req.query).forEach((key) => {
-        if (key !== "name" && key !== "page" && key !== "limit") { // Skip `name`, `page`, `limit` since they're special
+        if (key !== "name" && key !== "page" && key !== "limit") {
             const value = req.query[key];
             const schemaPath = Mtg.schema.path(key);
 
@@ -101,44 +100,70 @@ exports.findAll = (req, res) => {
                 const schemaType = schemaPath.instance;
 
                 if (schemaType === 'String') {
-                    condition[key] = { $regex: new RegExp(value), $options: "i" };
+                    matchStage[key] = { $regex: new RegExp(value), $options: "i" };
                 } else if (schemaType === 'Number') {
-                    condition[key] = Number(value);
+                    matchStage[key] = Number(value);
                 } else if (schemaType === 'Boolean') {
-                    condition[key] = value.toLowerCase() === 'true';
+                    matchStage[key] = value.toLowerCase() === 'true';
                 } else if (schemaType === 'Array' || schemaType === 'Embedded') {
                     try {
                         const parsedValue = JSON.parse(value);
                         if (Array.isArray(parsedValue)) {
-                            condition[key] = { $all: parsedValue };
+                            matchStage[key] = { $all: parsedValue };
                         } else if (typeof parsedValue === 'object') {
-                            condition[key] = parsedValue;
+                            matchStage[key] = parsedValue;
                         }
                     } catch (e) {
-                        condition[key] = { $regex: new RegExp(value), $options: "i" };
+                        matchStage[key] = { $regex: new RegExp(value), $options: "i" };
                     }
                 }
             }
         }
     });
 
-    // Ensure `page` and `limit` are valid numbers
-    const page = parseInt(req.query.page, 10) || 1; // Default to page 1
-    const limit = parseInt(req.query.limit, 10) || 16; // Default to 16 items per page
+    // Pagination parameters
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 16;
+    const skip = (page - 1) * limit;
 
-    // Paginate based on condition and pagination options
-    Mtg.paginate(condition, { page, limit })
-        .then(data => {
-            res.send({
-                totalItems: data.totalDocs,
-                cards: data.docs,
-                totalPages: data.totalPages,
-                currentPage: data.page,
-            });
+    // Aggregation pipeline: match, group by `name`, and paginate
+    const pipeline = [
+        { $match: matchStage },
+        { 
+            $group: {
+                _id: "$name",  // Group by the card name 
+                cards: { $last: "$$ROOT" }, // Store the last card detail
+                copiesCount: { $sum: 1 }  // Count the number of cards with the same name
+            }
+        },
+        { $skip: skip },
+        { $limit: limit }
+    ];
+
+    // Get total unique items (unique group count)
+    Mtg.aggregate([{ $match: matchStage }, { $group: { _id: "$name" } }])
+        .then(countResult => {
+            const totalItems = countResult.length; // Number of unique groups (unique items)
+            const totalPages = Math.ceil(totalItems / limit);
+
+            Mtg.aggregate(pipeline)
+                .then(groupedCards => {
+                    res.send({
+                        totalItems: totalItems,  // Now sending unique items
+                        cards: groupedCards,
+                        totalPages: totalPages,
+                        currentPage: page
+                    });
+                })
+                .catch(err => {
+                    res.status(500).send({
+                        message: err.message || "Some error occurred while retrieving grouped cards."
+                    });
+                });
         })
         .catch(err => {
             res.status(500).send({
-                message: err.message || "Some error occurred while retrieving cards."
+                message: err.message || "Error occurred while counting unique grouped cards."
             });
         });
 };

@@ -21,14 +21,17 @@
     <div class="col-md-12">
       <h4>Cards</h4>
       <div class="card-grid">
-        <div class="card-item"
-          v-for="(card, index) in cards"
-          :key="card.id"
-          @click="setActiveCard(card, index)"
+        <div
+          class="card-item"
+          v-for="(cardGroup, index) in cards"
+          :key="cardGroup.cards._id"
+          @click="setActiveCard(cardGroup.cards, index)"
           :class="{ active: index === currentIndex }"
         >
-          <img v-if="card.image_uris && card.image_uris.small" :src="card.image_uris.small" alt="Card image" />
-          <span v-else>{{ card.name }}</span>
+          <!-- Display card image if available, else show card name -->
+          <img v-if="cardGroup.cards.image_uris && cardGroup.cards.image_uris.normal" 
+               :src="cardGroup.cards.image_uris.normal" alt="Card image" />
+          <span v-else>{{ cardGroup.cards.name }}</span>
         </div>
       </div>
       <div class="pagination">
@@ -66,11 +69,12 @@
         <div>
           <label><strong>Oracle Text:</strong></label> {{ currentCard.oracle_text }}
         </div>
-        <a class="badge badge-warning" :href="'/mtg/' + currentCard.id">Edit</a>
+        <a class="badge badge-warning" :href="'/mtg/' + currentCard._id">Edit</a>
       </div>
     </div>
   </div>
 </template>
+
 
 <script>
 import MtgDataService from "../services/MtgDataService";
@@ -78,20 +82,19 @@ import MtgDataService from "../services/MtgDataService";
 export default {
   data() {
     return {
-      cards: [],
+      cards: [], // Now holds only the first card from each group
       currentCard: null,
       currentIndex: -1,
       
-      name: this.$route.query.name || "", // Load from URL query params
-      
+      name: this.$route.query.name || "",
       selectedLanguage: this.$route.query.lang || "en",
-      languages: ["en", "ja", "de", "fr", "es", "pt", "it"], // Available languages
+      languages: ["en", "ja", "de", "fr", "es", "pt", "it"],
 
       currentPage: parseInt(this.$route.query.page) || 1,
       itemsPerPage: parseInt(this.$route.query.limit) || 8,
 
       totalPages: 1,
-      totalItems: 0,
+      totalUniqueItems: 0,
       pageSizes: [8, 16, 32, 64]
     };
   },
@@ -104,9 +107,9 @@ export default {
         name: this.name
       })
         .then(response => {
-          this.cards = response.data.cards;
+          this.cards = response.data.cards; // Now each entry in cards is the first card from each group
           this.totalPages = response.data.totalPages;
-          this.totalItems = response.data.totalItems;
+          this.totalUniqueItems = response.data.totalUniqueItems;
         })
         .catch(e => {
           console.log(e);
@@ -122,7 +125,6 @@ export default {
       this.updateQueryParams();
     },
     updateQueryParams() {
-      // Update the URL with current search parameters
       this.$router.push({
         path: "/mtg",
         query: {
@@ -136,7 +138,6 @@ export default {
     }
   },
   watch: {
-    // Watch the route for changes, e.g., when the user manually edits the URL
     '$route.query': {
       immediate: true,
       handler(newQuery) {
@@ -154,35 +155,28 @@ export default {
 };
 </script>
 
+
 <style>
 .list {
   text-align: left;
-  max-width: 750px;
+  max-width: 1000px; /* Adjust to change how far the grid reaches the end of the page */
   margin: auto;
 }
 
 .pagination {
   display: flex;
-  justify-content: space-between;
+  justify-content: space-between; 
   margin-top: 20px;
 }
 
 .items-per-page {
   margin-top: 20px;
 }
-</style>
-
-<style>
-.list {
-  text-align: left;
-  max-width: 750px;
-  margin: auto;
-}
 
 .card-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: 15px;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); /* Adjust to change size */
+  gap: 10px;
 }
 
 .card-item {
@@ -190,20 +184,21 @@ export default {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 5px;
+  overflow: hidden;
   transition: transform 0.2s;
   cursor: pointer;
-}
-
-.card-item:hover {
-  transform: scale(1.05);
+  width: 100%; /* Full width of the grid cell */
+  position: relative; /* For correct positioning of the img */
+  padding-top: 140%; /* This maintains the aspect ratio */
 }
 
 .card-item img {
-  max-width: 100%;
-  height: auto;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* Ensures the image fills the container without distortion */
   border-radius: 5px;
 }
 
@@ -221,4 +216,6 @@ export default {
 .items-per-page {
   margin-top: 20px;
 }
+
+
 </style>
