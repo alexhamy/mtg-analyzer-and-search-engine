@@ -1,6 +1,4 @@
-{
-    "totalItems": 319,
-    "cards": [
+[
         {
             "image_uris": {
                 "small": "https://cards.scryfall.io/small/front/0/1/0116a9e2-960f-45b7-84d5-ef6df51d3ef7.jpg?1645975549",
@@ -38551,7 +38549,4 @@
             "story_spotlight": false,
             "edhrec_rank": 1
         }
-    ],
-    "totalPages": 1,
-    "currentPage": 1
-}
+]
